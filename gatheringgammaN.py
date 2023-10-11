@@ -39,32 +39,35 @@ def stoch_sir(XYZ, N, tend, beta, gamma, mu):
         XYZ = XYZ + change_matrix[event_index, :]
 
         current_t = current_t + 1
-    N = S[0] + I[0] + R[0]
+        N = np.sum([S[0], I[0], R[0]])
     return [T, S/N, I/N, R/N]
 
 
 def run_simulations(number_of_runs, name, param, kwargs):
-    print(f"Writing csv for parameter N={param}")
+    print(f"Writing CSV for parameter N= {param}")
     for i in range(number_of_runs):
+        gamma = param[0]
+        N = param[1]
         seed = np.random.get_state()
-        with open(f"../seeds/seed{name}{param:.2f}{i}.txt", "w") as f:
+        with open(f"../seeds/seed{name}{i}.txt", "w") as f:
             f.write(str(seed))
         df = pd.DataFrame(stoch_sir(**kwargs))
         for column in kwargs.keys():
             df[column] = [kwargs[column] for x in range(len(df))]
-        df["group"]= ["T", "S", "I", "R"]
+        df["group"] = ["T", "S", "I", "R"]
         df.to_csv(
-            f"../seeddata/{name.capitalize()}{param:.2f}stochasticSIR{i+1}.csv", index = False)
+            f"../seeddata/{name.capitalize()}{gamma:.2f}_{N}stochasticSIR{i+1}.csv", index=False)
 
 
-runs = 10
-# Varying N
-for N in range(2, 7):
-    XYZ = np.array((10**N, 1, 0))
-    run_simulations(runs, "N", 10**N,
-                    {"XYZ": XYZ,
-                     "N": np.sum(XYZ),
-                     "tend": 365,
-                     "beta": 1/2,
-                     "gamma": 1/14,
-                     "mu": 1/200})
+runs = 5
+# Varying Gamma
+for N in range(3, 7):
+    for gamma in np.linspace(0, 0.5, 10):
+        XYZ = np.array((10**N, 1, 0))
+        run_simulations(runs, "gamma_N", [gamma, 10**N],
+                        {"XYZ": XYZ,
+                         "N": np.sum(XYZ),
+                         "tend": 365,
+                         "beta": 1/2,
+                         "gamma": gamma,
+                         "mu": 1/200})
